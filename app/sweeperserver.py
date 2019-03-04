@@ -11,25 +11,43 @@ class SweeperBotRequestHandler(BaseHTTPRequestHandler):
     # GET
     def do_GET(self):
         print ("New GET request...")
-
         parsed = urlparse(self.path)
         print("Path is {}".format(parsed.path))
 
-        if parsed.path != '/authorize' :
+        if parsed.path == '/authorize':
+            self.send_response(200)
+            self.send_header('Content-Type','application/json')
+            self.end_headers()
+
+            bapi = BungieApi()
+            querydict = parse_qs(parsed.query)
+            auth = bapi.authorize(querydict['code'][0])
+
+            try:
+                auth['error']
+                self.wfile.write(bytes(json.dumps(auth, indent=2), "utf8"))
+            except Exception as e:
+                bapi.storeAuth(auth)
+                memberships = bapi.getMemberships(int(auth['membership_id']))
+                bapi.storeMemberships(memberships)
+                self.wfile.write(bytes(json.dumps(memberships, indent=2), "utf8"))
+
+        elif parsed.path == '/characters':
+            self.send_response(200)
+            self.send_header('Content-Type','application/json')
+            self.end_headers()
+
+            bapi = BungieApi()
+            querydict = parse_qs(parsed.query)
+            chars = bapi.getCharacters(querydict['membership_id'][0],
+                                      querydict['platform'][0])
+            self.wfile.write(bytes(json.dumps(chars, indent=2), "utf8"))
+
+        else:
             self.send_response(500)
             self.send_header('Content-Type','text/html')
             self.end_headers()
             self.wfile.write(bytes("Unsupported request", "utf8"))
-            return
-
-        self.send_response(200)
-        self.send_header('Content-Type','application/json')
-        self.end_headers()
-
-        bapi = BungieApi()
-        querydict = parse_qs(parsed.query)
-        auth = bapi.authorize(querydict['code'])
-        self.wfile.write(bytes(json.dumps(auth, indent=2), "utf8"))
 
 if __name__ == '__main__':
     print ("Starting server...")
