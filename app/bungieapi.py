@@ -190,19 +190,19 @@ class BungieApi:
     ############################################################################
     # CHARACTER STUFF
     ############################################################################
-    def getPlatformMembershipId(self, bungie_membership, platform):
+    def getPlatformMembershipId(self, membership_id, platform):
         platform = Platform(int(platform))
-        print("Getting {} membership id for account {}".format(platform.name, bungie_membership))
+        print("Getting {} membership id for account {}".format(platform.name, membership_id))
         userq = "SELECT xbox_membership_id, psn_membership_id, bliz_membership_id \
                  FROM users WHERE membership_id = ?"
 
         with self.getDatabase() as conn:
             curs = conn.cursor()
-            curs.execute(userq, (int(bungie_membership),))
+            curs.execute(userq, (int(membership_id),))
             row = curs.fetchone()
 
             if row is None:
-                return None 
+                return None
 
             if platform == Platform.XBOX:
                 return row[0]
@@ -264,11 +264,10 @@ class BungieApi:
                 values['bliz_membership_id'], values['membership_id']
             ))
 
-    def getCharacters(self, bungie_membership, platform):
-        access_token = self.getAccessToken(bungie_membership)
-
+    def getCharacters(self, membership_id, platform):
+        access_token = self.getAccessToken(membership_id)
         try:
-            platform_id = self.getPlatformMembershipId(bungie_membership, platform)
+            platform_id = self.getPlatformMembershipId(membership_id, platform)
         except ValueError as v:
             print("Could not get characters: {}".format(v))
             return {}
@@ -282,7 +281,7 @@ class BungieApi:
         print("Getting characters with token {}".format(access_token))
 
         r = requests.get(
-            self.platform_url + '/Destiny2/' + str(platform) +
+            self.platform_url + '/Destiny2/' + platform +
                 '/Profile/' + str(platform_id) + '/',
             params=params,
             headers=headers
@@ -290,16 +289,25 @@ class BungieApi:
 
         return r.json()
 
-    def getCharacterItems(self, membership_id, character_id):
+    def getCharacterItems(self, membership_id, platform, character_id):
+        access_token = self.getAccessToken(membership_id)
+        try:
+            platform_id = self.getPlatformMembershipId(membership_id, platform)
+        except ValueError as v:
+            print("Could not get characters items: {}".format(v))
+            return {}
+
         headers = {
             'Authorization' : 'Bearer ' + access_token,
             'X-API-Key' : self.api_key
         }
         params = { 'components' : ['201', '205'] }
 
+        print("Getting character items with token {}".format(access_token))
+
         r = requests.get(
-            self.platform_url + '/Destiny2/2/Profile/' + membership_id
-                + '/Character/' + character_id + '/',
+            self.platform_url + '/Destiny2/' + platform + '/Profile/' +
+                str(platform_id) + '/Character/' + character_id + '/',
             params=params,
             headers=headers
         )

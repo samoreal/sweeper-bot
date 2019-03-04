@@ -43,6 +43,18 @@ class SweeperBotRequestHandler(BaseHTTPRequestHandler):
                                       querydict['platform'][0])
             self.wfile.write(bytes(json.dumps(chars, indent=2), "utf8"))
 
+        elif parsed.path == '/items':
+            self.send_response(200)
+            self.send_header('Content-Type','application/json')
+            self.end_headers()
+
+            bapi = BungieApi()
+            querydict = parse_qs(parsed.query)
+            items = bapi.getCharacterItems(querydict['membership_id'][0],
+                                        querydict['platform'][0],
+                                        querydict['character_id'][0])
+            self.wfile.write(bytes(json.dumps(items, indent=2), "utf8"))
+
         else:
             self.send_response(500)
             self.send_header('Content-Type','text/html')
