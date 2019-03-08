@@ -32,9 +32,10 @@ class Inventory:
         return uniques
 
 class InventoryItem:
-    def __init__(self, name, *perklist):
+    def __init__(self, name, char, type, perklist):
         self.name = name
-        self.hash = None
+        self.char = char
+        self.type = type
         self.perks = {}
         for perk in perklist:
             self.perks[perk] = True
