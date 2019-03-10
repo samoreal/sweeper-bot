@@ -1,13 +1,22 @@
-import csv, re, json
+import csv, re, json, argparse
 from inventoryitem import Inventory, InventoryItem
 from bungieapi import BungieApi
 
 if __name__ == '__main__':
+    main()
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('csv', help = 'the file exported from DIM containing your armor')
+    args = parser.parse_args()
+    do_cli_diff(args.csv)
+
+def do_cli_diff(dim_file):
     perk_re = re.compile('perks\s+\d+', re.IGNORECASE)
     value_re = re.compile('(tier\s+\d+armor)|(mod)$', re.IGNORECASE)
 
     buckets = {}
-    with open('./assets/destinyArmor.csv') as csvfile:
+    with open(dim_file) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             perks = []
@@ -50,7 +59,7 @@ if __name__ == '__main__':
     #with open('./assets/dump.json', 'wt') as fp:
         #json.dump(buckets, fp, indent=2)
 
-def main():
+def old_main():
     bapi = BungieApi()
     manifest = bapi.getManifest()
     if (bapi.shouldUpdateAssetDatabase(manifest)):
